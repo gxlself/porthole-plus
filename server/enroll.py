@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""舷窗Plus iPhone 自动登记安装服务（Linux 服务器，rcodesign 重签）。
+"""iPhone 自动登记安装服务（Linux 服务器，rcodesign 重签）。一个 App 一个实例：APP_* 环境变量决定名字和包名。
 
 流程：
   1. 手机 Safari 打开 /enroll.mobileconfig，装一个「描述文件服务」。
@@ -19,8 +19,11 @@ from urllib.parse import parse_qs, urlparse
 import jwt  # pyjwt[crypto]
 
 BUNDLE_ID = os.environ.get("BUNDLE_ID", "com.gxlself.offlinearena")
-APP_TITLE = "舷窗Plus"
-PROFILE_NAME = "PortholePlus AdHoc"
+APP_TITLE = os.environ.get("APP_TITLE", "舷窗Plus")
+APP_SLUG = os.environ.get("APP_SLUG", "PortholePlus")  # 英文名：描述文件名、下载文件名
+APP_BRAND = os.environ.get("APP_BRAND", "舷窗<b>Plus</b>")  # 页面左上角品牌字样（HTML）
+APP_HINT = os.environ.get("APP_HINT", "点「安装」后回到桌面，图标转完就能玩。第一次建房时请允许「本地网络」。")
+PROFILE_NAME = f"{APP_SLUG} AdHoc"
 DATA = os.path.abspath(os.environ.get("DATA_DIR", os.path.expanduser("~/swarm-arena/porthole-enroll")))
 PORT = int(os.environ.get("PORT", "8795"))
 MAX_PER_CLASS = int(os.environ.get("MAX_PER_CLASS", "95"))
@@ -105,7 +108,7 @@ def ensure_bundle_id():
         if b["attributes"]["identifier"] == BUNDLE_ID:
             return b["id"]
     code, d = asc("POST", "/v1/bundleIds", {"data": {"type": "bundleIds", "attributes": {
-        "identifier": BUNDLE_ID, "name": "PortholePlus", "platform": "IOS"}}})
+        "identifier": BUNDLE_ID, "name": APP_SLUG, "platform": "IOS"}}})
     if code != 201:
         raise RuntimeError(f"登记 Bundle ID 失败：{code} {d}")
     return d["data"]["id"]
@@ -149,7 +152,7 @@ def register_devices(pending):
         if per_class.get(cls, 0) >= MAX_PER_CLASS:
             failed[udid] = "这个开发者账号今年能登记的设备已经用完了"
             continue
-        name = f"舷窗Plus {info.get('product', '')} {udid[-6:]}"[:50]
+        name = f"{APP_TITLE} {info.get('product', '')} {udid[-6:]}"[:50]
         code, d = asc("POST", "/v1/devices", {"data": {"type": "devices", "attributes": {
             "name": name, "udid": udid, "platform": "IOS"}}})
         if code == 201:
@@ -294,7 +297,7 @@ def prepare_base():
     prefix = buf.getvalue()[:prefix_len]
     meta = {"app": app, "len": prefix_len, "sha": hashlib.sha256(prefix).hexdigest(), "key": ""}
     if os.environ.get("OSS_BUCKET"):
-        meta["key"] = f"porthole/ios/base-{meta['sha'][:16]}.bin"
+        meta["key"] = f"{APP_SLUG.lower()}/ios/base-{meta['sha'][:16]}.bin"
         tmp = os.path.join(DATA, "base.bin")
         with open(tmp, "wb") as f:
             f.write(prefix)
@@ -376,7 +379,7 @@ def worker():
                 with open(ipa, "rb") as f:
                     f.seek(base["len"])
                     tail = f.read()
-                ipa_url = oss_compose(base["key"], tail, f"porthole/ios/PortholePlus-{version}-r{rev}-{secrets.token_hex(4)}.ipa")
+                ipa_url = oss_compose(base["key"], tail, f"{APP_SLUG.lower()}/ios/{APP_SLUG}-{version}-r{rev}-{secrets.token_hex(4)}.ipa")
             with lock:
                 state["ipa_url"] = ipa_url
                 state["rev"] += 1
@@ -410,7 +413,7 @@ def mobileconfig(base):
                            "Challenge": secrets.token_hex(8)},
         "PayloadOrganization": APP_TITLE, "PayloadDisplayName": f"{APP_TITLE} 安装登记",
         "PayloadDescription": "只读取这台设备的 UDID 和机型，用来登记安装。读取后会自动跳回安装页，这个描述文件不会留在设备上。",
-        "PayloadIdentifier": "com.gxlself.portholeplus.enroll", "PayloadUUID": str(uuid.uuid4()).upper(),
+        "PayloadIdentifier": f"com.gxlself.enroll.{APP_SLUG.lower()}", "PayloadUUID": str(uuid.uuid4()).upper(),
         "PayloadType": "Profile Service", "PayloadVersion": 1})
 
 
@@ -429,15 +432,15 @@ def parse_device_reply(body):
 
 
 PAGE = """<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>舷窗Plus · 安装</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>{title} · 安装</title>
 <link rel="stylesheet" href="{site}/assets/site.css"><link rel="stylesheet" href="{site}/ios/install.css"></head>
-<body class="install"><header class="nav"><a class="brand" href="{site}/"><img src="{site}/assets/logo.svg" alt="" width="36" height="36"><span>舷窗<b>Plus</b></span></a></header>
+<body class="install"><header class="nav"><a class="brand" href="{site}/"><img src="{site}/assets/icon-180.png" alt="" width="36" height="36"><span>{brand}</span></a></header>
 <main class="wrap"><section class="app-card">
-<img class="app-icon" src="{site}/assets/icon-512.png" alt="" width="112" height="112"><h1>舷窗Plus</h1>
+<img class="app-icon" src="{site}/assets/icon-512.png" alt="" width="112" height="112"><h1>{title}</h1>
 <p class="sub" id="who">{product}</p>
 <div id="busy"><div class="spinner"></div><p class="hint" id="msg">正在为这台设备签名，大约半分钟…</p></div>
-<div id="ok" hidden><a class="btn install-btn" href="itms-services://?action=download-manifest&amp;url={manifest}">安装舷窗Plus</a>
-<p class="hint">点「安装」后回到桌面，图标转完就能玩。第一次建房时请允许「本地网络」。</p></div>
+<div id="ok" hidden><a class="btn install-btn" href="itms-services://?action=download-manifest&amp;url={manifest}">安装{title}</a>
+<p class="hint">{hint}</p></div>
 <div id="err" class="notice" hidden><b>没装上</b><p id="errmsg"></p><a class="btn btn-line" href="{site}/ios/">回安装页重试</a></div>
 </section></main>
 <style>.spinner{{width:44px;height:44px;margin:8px auto 4px;border-radius:50%;border:5px solid var(--line);border-top-color:var(--brand);animation:sp 1s linear infinite}}@keyframes sp{{to{{transform:rotate(1turn)}}}}</style>
@@ -452,7 +455,7 @@ poll();
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "PortholePlus"
+    server_version = APP_SLUG
 
     def base(self):
         host = self.headers.get("X-Forwarded-Host") or self.headers.get("Host", f"127.0.0.1:{PORT}")
@@ -492,7 +495,7 @@ class Handler(BaseHTTPRequestHandler):
                                  "application/json")
         if u.path == "/enroll.mobileconfig":
             return self.send(200, mobileconfig(self.base()), "application/x-apple-aspen-config",
-                             {"Content-Disposition": 'attachment; filename="PortholePlus.mobileconfig"'})
+                             {"Content-Disposition": f'attachment; filename="{APP_SLUG}.mobileconfig"'})
         if u.path in ("/wait", "/status"):
             t = q.get("t", "")
             with lock:
@@ -504,7 +507,7 @@ class Handler(BaseHTTPRequestHandler):
                 msg = dev.get("msg") or ("苹果那边有点慢，还在重试…" if err and dev["state"] == "pending" else "")
                 return self.send(200, json.dumps({"state": dev["state"], "msg": msg}, ensure_ascii=False), "application/json")
             product = html.escape(dev.get("product", "") if dev else "")
-            page = PAGE.format(site=SITE, token=t, product=product or "iPhone / iPad",
+            page = PAGE.format(site=SITE, token=t, title=html.escape(APP_TITLE), brand=APP_BRAND, hint=html.escape(APP_HINT), product=product or "iPhone / iPad",
                                manifest=html.escape(self.base() + "/manifest.plist"))
             return self.send(200, page, "text/html; charset=utf-8")
         if u.path == "/manifest.plist":
