@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>舷窗Plus · iPhone 安装</title>
+<meta name="description" content="在 iPhone / iPad 上临时安装舷窗Plus 内测版。">
+<meta name="theme-color" content="#0b1440">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../assets/icon-180.png">
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="stylesheet" href="install.css">
+</head>
+<body class="install">
+<header class="nav">
+  <a class="brand" href="../"><img src="../assets/logo.svg" alt="" width="36" height="36"><span>舷窗<b>Plus</b></span></a>
+  <nav><a href="../#games">玩法</a><a href="../#how">怎么联机</a></nav>
+</header>
+
+<main class="wrap">
+  <section class="app-card">
+    <img class="app-icon" src="../assets/icon-512.png" alt="舷窗Plus 图标" width="112" height="112">
+    <h1>舷窗Plus</h1>
+    <p class="sub">iPhone / iPad 内测版</p>
+    <dl class="facts">
+      <div><dt>版本</dt><dd id="v-version">—</dd></div>
+      <div><dt>大小</dt><dd id="v-size">—</dd></div>
+      <div><dt>更新</dt><dd id="v-date">—</dd></div>
+    </dl>
+
+    <div id="state-ok" class="state">
+      <a class="btn install-btn" id="install" href="#">安装到这台设备</a>
+      <p class="hint">点完回到桌面，图标下面会显示安装进度。</p>
+    </div>
+    <div id="state-inapp" class="state notice" hidden>
+      <b>请用 Safari 打开这个页面</b>
+      <p>微信、QQ 等 App 里的浏览器装不了。点右上角「···」，选「在 Safari 中打开」。</p>
+      <button class="btn btn-line" id="copy" type="button">复制页面链接</button>
+    </div>
+    <div id="state-desktop" class="state notice" hidden>
+      <b>用 iPhone 相机扫一扫</b>
+      <p>安装只能在 iPhone / iPad 上的 Safari 里完成。</p>
+      <div class="qr" id="qr" aria-label="本页二维码"></div>
+    </div>
+  </section>
+
+  <section class="guide">
+    <h2>第一次安装，按这几步来</h2>
+    <ol class="steps">
+      <li>
+        <b>先登记设备</b>
+        <span>内测版只能装在登记过的设备上。还没登记的，把设备的 UDID 发给分享这个页面给你的人，登记好之后会重新打一版，再回来点安装就行。</span>
+        <details>
+          <summary>怎么查 UDID？</summary>
+          <p>用数据线把 iPhone 连到电脑：Mac 打开「访达」，左侧点你的 iPhone；Windows 打开 iTunes / Apple 设备。点一下设备名下面的「序列号」那一行，它会变成 UDID，右键复制。</p>
+        </details>
+      </li>
+      <li>
+        <b>点「安装到这台设备」</b>
+        <span>弹窗里点「安装」，然后回到桌面等图标转完。没反应的话，确认是用 Safari 打开的。</span>
+      </li>
+      <li>
+        <b>打开开发者模式（iOS 16 及以上）</b>
+        <span>第一次打开会提示需要开发者模式：「设置 › 隐私与安全性 › 开发者模式」打开，按提示重启，开机后再点「打开」。</span>
+      </li>
+      <li>
+        <b>允许「本地网络」</b>
+        <span>第一次建房或进房时，系统会问能不能访问本地网络，点「允许」，不然找不到身边的房间。</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="faq">
+    <h2>常见问题</h2>
+    <details><summary>提示「无法安装」或者装到一半消失</summary><p>大多是这台设备还没登记。把 UDID 发过来登记，等新的一版出来再装。</p></details>
+    <details><summary>提示「不受信任的开发者」</summary><p>到「设置 › 通用 › VPN 与设备管理」，在开发者 App 里点进去选「信任」，再回桌面打开。</p></details>
+    <details><summary>新版本怎么更新？存档会丢吗？</summary><p>回到这个页面再点一次安装，会直接覆盖旧版，存档和设置都在。</p></details>
+    <details><summary>能一直用吗？</summary><p>内测版有签名期限，到期前会发新版本。安卓手机请回首页下载安装包。</p></details>
+  </section>
+</main>
+
+<footer class="foot"><p><a href="../">返回舷窗Plus 首页</a></p></footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="install.js"></script>
+</body>
+</html>
