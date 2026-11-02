@@ -9,8 +9,6 @@ root=$(cd "$(dirname "$0")/.." && pwd)
 tag="v$version-$build"
 [[ -f "$ipa" ]] || { echo "找不到 $ipa" >&2; exit 1; }
 bundle=$(unzip -p "$ipa" 'Payload/*.app/Info.plist' | plutil -extract CFBundleIdentifier raw -o - -)
-assets=("$ipa#PortholePlus-$version-$build.ipa")
-[[ -n "$apk" ]] && assets+=("$apk#PortholePlus-$version-$build.apk")
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
 cp "$ipa" "$tmp/PortholePlus-$version-$build.ipa"; files=("$tmp/PortholePlus-$version-$build.ipa")
 if [[ -n "$apk" ]]; then cp "$apk" "$tmp/PortholePlus-$version-$build.apk"; files+=("$tmp/PortholePlus-$version-$build.apk"); fi
