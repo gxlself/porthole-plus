@@ -29,8 +29,8 @@
     </dl>
 
     <div id="state-ok" class="state">
-      <a class="btn install-btn" id="install" href="#">安装到这台设备</a>
-      <p class="hint">点完回到桌面，图标下面会显示安装进度。</p>
+      <a class="btn install-btn" id="install" href="/enroll.mobileconfig">开始安装</a>
+      <p class="hint">第一次装要先让这台设备登记一下，全程自动，大约一分钟。</p>
     </div>
     <div id="state-inapp" class="state notice" hidden>
       <b>请用 Safari 打开这个页面</b>
@@ -45,37 +45,34 @@
   </section>
 
   <section class="guide">
-    <h2>第一次安装，按这几步来</h2>
+    <h2>第一次安装，跟着做就行</h2>
     <ol class="steps">
       <li>
-        <b>先登记设备</b>
-        <span>内测版只能装在登记过的设备上。还没登记的，把设备的 UDID 发给分享这个页面给你的人，登记好之后会重新打一版，再回来点安装就行。</span>
-        <details>
-          <summary>怎么查 UDID？</summary>
-          <p>用数据线把 iPhone 连到电脑：Mac 打开「访达」，左侧点你的 iPhone；Windows 打开 iTunes / Apple 设备。点一下设备名下面的「序列号」那一行，它会变成 UDID，右键复制。</p>
-        </details>
+        <b>点「开始安装」，选「允许」</b>
+        <span>会下载一个「舷窗Plus 安装登记」描述文件。它只读这台设备的编号和机型，用来给你单独签一份安装包。</span>
       </li>
       <li>
-        <b>点「安装到这台设备」</b>
-        <span>弹窗里点「安装」，然后回到桌面等图标转完。没反应的话，确认是用 Safari 打开的。</span>
+        <b>去设置里装上它</b>
+        <span>打开「设置」，最上面会出现「已下载描述文件」，点进去选「安装」，输入锁屏密码。（没看到就进「设置 › 通用 › VPN 与设备管理」。）</span>
       </li>
       <li>
-        <b>打开开发者模式（iOS 16 及以上）</b>
-        <span>第一次打开会提示需要开发者模式：「设置 › 隐私与安全性 › 开发者模式」打开，按提示重启，开机后再点「打开」。</span>
+        <b>自动跳回来，点「安装舷窗Plus」</b>
+        <span>装完描述文件会自动回到 Safari，等半分钟签好，点安装，回桌面看图标转完就能玩。描述文件用完即走，不会留在设备上。</span>
       </li>
       <li>
-        <b>允许「本地网络」</b>
-        <span>第一次建房或进房时，系统会问能不能访问本地网络，点「允许」，不然找不到身边的房间。</span>
+        <b>第一次建房时点「允许」本地网络</b>
+        <span>不允许的话找不到身边的房间。</span>
       </li>
     </ol>
   </section>
 
   <section class="faq">
     <h2>常见问题</h2>
-    <details><summary>提示「无法安装」或者装到一半消失</summary><p>大多是这台设备还没登记。把 UDID 发过来登记，等新的一版出来再装。</p></details>
-    <details><summary>提示「不受信任的开发者」</summary><p>到「设置 › 通用 › VPN 与设备管理」，在开发者 App 里点进去选「信任」，再回桌面打开。</p></details>
-    <details><summary>新版本怎么更新？存档会丢吗？</summary><p>回到这个页面再点一次安装，会直接覆盖旧版，存档和设置都在。</p></details>
-    <details><summary>能一直用吗？</summary><p>内测版有签名期限，到期前会发新版本。安卓手机请回首页下载安装包。</p></details>
+    <details><summary>点了「开始安装」没反应</summary><p>要在 iPhone / iPad 自带的 Safari 里打开这个页面，微信、QQ 里的浏览器装不了。</p></details>
+    <details><summary>装好描述文件后没有跳回来</summary><p>回到 Safari，重新打开这个页面再点一次「开始安装」，会直接进到安装那一步。</p></details>
+    <details><summary>提示「无法安装」</summary><p>多半是签名还没生成完，等一分钟再点一次安装。还不行的话，重新走一遍「开始安装」。</p></details>
+    <details><summary>新版本怎么更新？存档会丢吗？</summary><p>回到这个页面重新走一遍就行，会直接覆盖旧版，存档和设置都在。</p></details>
+    <details><summary>能一直用吗？</summary><p>内测签名有效期一年左右，到期前会发新版。安卓手机请回首页下载安装包。</p></details>
   </section>
 </main>
 
