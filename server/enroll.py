@@ -11,7 +11,7 @@
 SECRETS_DIR（发布证书私钥所在目录，私钥在服务器上生成、不离开服务器）、RCODESIGN、DATA_DIR、PORT（默认 8795）、
 MAX_PER_CLASS（默认 95）、SITE（静态页面前缀，默认同域）。只监听 127.0.0.1，由 nginx 对外提供 HTTPS。
 """
-import base64, hashlib, hmac, html, json, os, plistlib, re, secrets, shutil, subprocess, sys, tempfile, threading, time, uuid
+import base64, hashlib, hmac, html, io, zipfile, json, os, plistlib, re, secrets, shutil, subprocess, sys, tempfile, threading, time, uuid
 import urllib.error, urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
@@ -180,6 +180,53 @@ def rebuild_profile(bundle_rid, cert_rid):
     return content, udids
 
 
+# ---------- 阿里云 OSS（大文件走 CDN，服务器带宽太小） ----------
+def oss_put(path, key, ctype="application/octet-stream"):
+    import email.utils
+    bucket, endpoint = os.environ["OSS_BUCKET"], os.environ["OSS_ENDPOINT"]
+    date = email.utils.formatdate(usegmt=True)
+    sts = f"PUT\n\n{ctype}\n{date}\n/{bucket}/{key}"
+    sig = base64.b64encode(hmac.new(os.environ["OSS_ACCESS_KEY_SECRET"].encode(), sts.encode(), hashlib.sha1).digest()).decode()
+    with open(path, "rb") as f:
+        req = urllib.request.Request(f"https://{bucket}.{endpoint}/{key}", data=f.read(), method="PUT", headers={
+            "Date": date, "Content-Type": ctype, "Authorization": f"OSS {os.environ['OSS_ACCESS_KEY_ID']}:{sig}"})
+    with urllib.request.urlopen(req, timeout=600) as r:
+        if r.status != 200:
+            raise RuntimeError(f"上传 OSS 失败：{r.status}")
+    return os.environ["OSS_PUBLIC_BASE_URL"].rstrip("/") + "/" + key
+
+
+def oss_req(method, key, sub="", data=None, ctype="", headers=None):
+    import email.utils
+    bucket, endpoint = os.environ["OSS_BUCKET"], os.environ["OSS_ENDPOINT"]
+    date = email.utils.formatdate(usegmt=True)
+    headers = dict(headers or {})
+    oss_h = "".join(f"{k.lower()}:{v}\n" for k, v in sorted(headers.items()) if k.lower().startswith("x-oss-"))
+    sts = f"{method}\n\n{ctype}\n{date}\n{oss_h}/{bucket}/{key}{('?' + sub) if sub else ''}"
+    sig = base64.b64encode(hmac.new(os.environ["OSS_ACCESS_KEY_SECRET"].encode(), sts.encode(), hashlib.sha1).digest()).decode()
+    headers.update({"Date": date, "Authorization": f"OSS {os.environ['OSS_ACCESS_KEY_ID']}:{sig}"})
+    if ctype:
+        headers["Content-Type"] = ctype
+    req = urllib.request.Request(f"https://{bucket}.{endpoint}/{key}{('?' + sub) if sub else ''}", data=data, method=method, headers=headers)
+    with urllib.request.urlopen(req, timeout=600) as r:
+        return r.headers, r.read()
+
+
+def oss_compose(base_key, tail, key):
+    """新对象 = OSS 上已有的静态前缀（服务端拷贝）+ 这次重签的小尾巴。只上传尾巴。"""
+    _, body = oss_req("POST", key, "uploads")
+    upload_id = re.search(rb"<UploadId>([^<]+)</UploadId>", body).group(1).decode()
+    _, body = oss_req("PUT", key, f"partNumber=1&uploadId={upload_id}",
+                      headers={"x-oss-copy-source": f"/{os.environ['OSS_BUCKET']}/{base_key}"})
+    etag1 = re.search(rb"<ETag>([^<]+)</ETag>", body).group(1).decode().replace("&quot;", '"')
+    h, _ = oss_req("PUT", key, f"partNumber=2&uploadId={upload_id}", data=tail, ctype="application/octet-stream")
+    etag2 = h["ETag"]
+    xml = (f"<CompleteMultipartUpload><Part><PartNumber>1</PartNumber><ETag>{etag1}</ETag></Part>"
+           f"<Part><PartNumber>2</PartNumber><ETag>{etag2}</ETag></Part></CompleteMultipartUpload>").encode()
+    oss_req("POST", key, f"uploadId={upload_id}", data=xml, ctype="application/xml")
+    return os.environ["OSS_PUBLIC_BASE_URL"].rstrip("/") + "/" + key
+
+
 # ---------- 重签 ----------
 def run(*cmd, **kw):
     r = subprocess.run(cmd, capture_output=True, text=True, **kw)
@@ -188,12 +235,80 @@ def run(*cmd, **kw):
     return r.stdout
 
 
-def resign(profile_bytes, out_ipa):
+ZIP_TIME = (2020, 1, 1, 0, 0, 0)
+DYNAMIC = ("_CodeSignature/", "embedded.mobileprovision")  # 加上主程序：每次重签都会变的文件
+
+
+def sign_files(cmd_tail):
+    run(RCODESIGN, "sign", "--pem-file", os.path.join(SECRETS, "dist.key"), "--pem-file", os.path.join(SECRETS, "dist.pem"), *cmd_tail)
+
+
+def app_files(app):
+    out = []
+    for root, dirs, files in os.walk(app):
+        dirs.sort()
+        for f in sorted(files):
+            full = os.path.join(root, f)
+            out.append(os.path.relpath(full, app))
+    return out
+
+
+def write_entries(zf, app, rels):
+    name = os.path.basename(app)
+    for rel in rels:
+        full = os.path.join(app, rel)
+        zi = zipfile.ZipInfo(f"Payload/{name}/{rel}", ZIP_TIME)
+        zi.compress_type = zipfile.ZIP_DEFLATED
+        zi.external_attr = (os.stat(full).st_mode & 0xFFFF) << 16
+        with open(full, "rb") as f:
+            zf.writestr(zi, f.read(), compresslevel=6)
+
+
+def split_files(app):
+    exe = plistlib.load(open(os.path.join(app, "Info.plist"), "rb"))["CFBundleExecutable"]
+    static, dynamic = [], []
+    for rel in app_files(app):
+        (dynamic if rel == exe or rel.startswith(DYNAMIC) else static).append(rel)
+    return static, dynamic
+
+
+def prepare_base():
+    """原始包换了：解开、把 Frameworks 签一次，静态部分打成 zip 前缀传到 OSS。之后每台新设备只需重签主程序。"""
+    base = os.path.join(DATA, "base")
+    shutil.rmtree(base, ignore_errors=True)
+    os.makedirs(base)
+    run("unzip", "-q", os.environ["SRC_IPA"], "-d", base)
+    app = os.path.join(base, "Payload", [x for x in os.listdir(os.path.join(base, "Payload")) if x.endswith(".app")][0])
+    for sub in ("Frameworks", "PlugIns"):
+        d = os.path.join(app, sub)
+        if os.path.isdir(d):
+            for x in sorted(os.listdir(d)):
+                if x.endswith((".framework", ".dylib", ".appex")):
+                    sign_files([os.path.join(d, x)])
+    shutil.rmtree(os.path.join(app, "_CodeSignature"), ignore_errors=True)
+    static, _ = split_files(app)
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        write_entries(zf, app, static)
+        prefix_len = zf.fp.tell()
+    prefix = buf.getvalue()[:prefix_len]
+    meta = {"app": app, "len": prefix_len, "sha": hashlib.sha256(prefix).hexdigest(), "key": ""}
+    if os.environ.get("OSS_BUCKET"):
+        meta["key"] = f"porthole/ios/base-{meta['sha'][:16]}.bin"
+        tmp = os.path.join(DATA, "base.bin")
+        with open(tmp, "wb") as f:
+            f.write(prefix)
+        oss_put(tmp, meta["key"])
+        os.remove(tmp)
+    log(f"静态部分 {prefix_len / 1048576:.1f} MB 已就绪", meta["key"])
+    return meta
+
+
+def resign(profile_bytes, out_ipa, base):
     work = tempfile.mkdtemp(prefix="pp-resign-", dir=DATA)
     try:
-        run("unzip", "-q", os.environ["SRC_IPA"], "-d", work)
-        apps = [x for x in os.listdir(os.path.join(work, "Payload")) if x.endswith(".app")]
-        app = os.path.join(work, "Payload", apps[0])
+        app = os.path.join(work, os.path.basename(base["app"]))
+        shutil.copytree(base["app"], app, symlinks=True)
         prof_path = os.path.join(work, "p.mobileprovision")
         with open(prof_path, "wb") as f:
             f.write(profile_bytes)
@@ -203,14 +318,16 @@ def resign(profile_bytes, out_ipa):
         ent_path = os.path.join(work, "ent.plist")
         with open(ent_path, "wb") as f:
             plistlib.dump(decoded["Entitlements"], f)
-        shutil.rmtree(os.path.join(app, "_CodeSignature"), ignore_errors=True)
-        # rcodesign 会由内到外签好 Frameworks 等嵌套包；-e 只作用于主程序
-        run(RCODESIGN, "sign", "--pem-file", os.path.join(SECRETS, "dist.key"), "--pem-file", os.path.join(SECRETS, "dist.pem"),
-            "-e", ent_path, app)
+        # Frameworks 已在 prepare_base 签好：这里只签主程序（--shallow 不碰嵌套包）
+        sign_files(["--shallow", "-e", ent_path, app])
+        static, dynamic = split_files(app)
         tmp_ipa = out_ipa + ".tmp"
-        if os.path.exists(tmp_ipa):
-            os.remove(tmp_ipa)
-        run("zip", "-qry", tmp_ipa, "Payload", cwd=work)
+        with zipfile.ZipFile(tmp_ipa, "w") as zf:
+            write_entries(zf, app, static)
+            write_entries(zf, app, dynamic)
+        with open(tmp_ipa, "rb") as f:
+            if hashlib.sha256(f.read(base["len"])).hexdigest() != base["sha"]:
+                raise RuntimeError("静态部分和已上传的前缀对不上")
         os.replace(tmp_ipa, out_ipa)
         info = plistlib.load(open(os.path.join(app, "Info.plist"), "rb"))
         return info.get("CFBundleShortVersionString", "0"), decoded.get("ExpirationDate")
@@ -228,6 +345,7 @@ def src_stamp():
 
 def worker():
     bundle_rid = cert_rid = None
+    base = state.get("base")  # 重启后沿用已上传的静态前缀
     while True:
         wake.wait(30)
         wake.clear()
@@ -244,8 +362,23 @@ def worker():
             cert_rid = cert_rid or distribution_cert_id()
             failed = register_devices(pending)
             profile, udids = rebuild_profile(bundle_rid, cert_rid)
-            version, expires = resign(profile, os.path.join(DATA, "app.ipa"))
+            if not base or base.get("src") != src_stamp() or not os.path.isdir(base["app"]):
+                base = prepare_base()
+                base["src"] = src_stamp()
+                with lock:
+                    state["base"] = base
+                    save_state(state)
+            ipa = os.path.join(DATA, "app.ipa")
+            version, expires = resign(profile, ipa, base)
+            rev = state["rev"] + 1
+            ipa_url = ""
+            if base["key"]:
+                with open(ipa, "rb") as f:
+                    f.seek(base["len"])
+                    tail = f.read()
+                ipa_url = oss_compose(base["key"], tail, f"porthole/ios/PortholePlus-{version}-r{rev}-{secrets.token_hex(4)}.ipa")
             with lock:
+                state["ipa_url"] = ipa_url
                 state["rev"] += 1
                 state["src"] = src_stamp()
                 state["version"] = version
@@ -376,12 +509,12 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(200, page, "text/html; charset=utf-8")
         if u.path == "/manifest.plist":
             with lock:
-                rev, version = state["rev"], state.get("version", "0")
+                rev, version, ipa_url = state["rev"], state.get("version", "0"), state.get("ipa_url")
             b = self.base()
             return self.send(200, plistlib.dumps({"items": [{"assets": [
-                {"kind": "software-package", "url": f"{b}/app.ipa?rev={rev}"},
-                {"kind": "display-image", "url": f"{SITE}/assets/icon-57.png"},
-                {"kind": "full-size-image", "url": f"{SITE}/assets/icon-512.png"}],
+                {"kind": "software-package", "url": ipa_url or f"{b}/app.ipa?rev={rev}"},
+                {"kind": "display-image", "url": f"{b}{SITE}/assets/icon-57.png"},
+                {"kind": "full-size-image", "url": f"{b}{SITE}/assets/icon-512.png"}],
                 "metadata": {"bundle-identifier": BUNDLE_ID, "bundle-version": version, "kind": "software",
                              "title": APP_TITLE}}]}), "application/xml")
         if u.path == "/app.ipa":
