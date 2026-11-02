@@ -230,6 +230,26 @@ def oss_compose(base_key, tail, key):
     return os.environ["OSS_PUBLIC_BASE_URL"].rstrip("/") + "/" + key
 
 
+def gh_publish(ipa, base, asset):
+    """把重签好的包放到 GitHub Release：经阿里云中转（火山出口太慢）。不变部分只传一次，之后只传变动的尾巴。"""
+    host, key = os.environ["GH_UPLOAD_HOST"], os.environ["GH_UPLOAD_KEY"]
+    slug = APP_SLUG.lower()
+    ssh = ["ssh", "-i", key, "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=accept-new", host]
+    if subprocess.run(ssh + [f"has {slug} {base['sha']}"], capture_output=True, text=True, check=True).stdout.strip() != "yes":
+        with open(ipa, "rb") as f:
+            prefix = f.read(base["len"])
+        subprocess.run(ssh + [f"base {slug} {base['sha']}"], input=prefix, capture_output=True, check=True, timeout=3600)
+        log("不变部分已传到中转机")
+    with open(ipa, "rb") as f:
+        f.seek(base["len"])
+        tail = f.read()
+    r = subprocess.run(ssh + [f"publish {slug} {os.environ['GH_REPO']} {os.environ['GH_TAG']} {asset} {base['sha']}"],
+                       input=tail, capture_output=True, timeout=3600)
+    if r.returncode != 0:
+        raise RuntimeError("传 GitHub 失败：" + r.stderr.decode(errors="replace")[:200])
+    return r.stdout.decode().strip().splitlines()[-1]
+
+
 # ---------- 重签 ----------
 def run(*cmd, **kw):
     r = subprocess.run(cmd, capture_output=True, text=True, **kw)
@@ -377,7 +397,9 @@ def worker():
             version, expires = resign(profile, ipa, base)
             rev = state["rev"] + 1
             ipa_url = ""
-            if base["key"]:
+            if os.environ.get("GH_REPO"):
+                ipa_url = gh_publish(ipa, base, f"{APP_SLUG}-{version}-r{rev}.ipa")
+            elif base["key"]:
                 with open(ipa, "rb") as f:
                     f.seek(base["len"])
                     tail = f.read()
@@ -419,6 +441,19 @@ def mobileconfig(base):
         "PayloadType": "Profile Service", "PayloadVersion": 1})
 
 
+def sign_profile(data):
+    """用网站的 HTTPS 证书给描述文件签名，iOS 才会显示「已验证」而不是「未签名」。没配证书就原样返回。"""
+    cert, key = os.environ.get("PROFILE_SIGN_CERT"), os.environ.get("PROFILE_SIGN_KEY")
+    if not (cert and key and os.path.exists(cert) and os.path.exists(key)):
+        return data
+    r = subprocess.run(["openssl", "smime", "-sign", "-signer", cert, "-inkey", key, "-certfile", cert,
+                        "-outform", "der", "-nodetach", "-binary"], input=data, capture_output=True)
+    if r.returncode != 0 or not r.stdout:
+        log("描述文件签名失败：", r.stderr.decode(errors="replace")[:200])
+        return data
+    return r.stdout
+
+
 def parse_device_reply(body):
     """验证 PKCS#7 是苹果设备证书签的，返回里面的 plist。"""
     with tempfile.NamedTemporaryFile(dir=DATA, suffix=".p7s") as f:
@@ -440,7 +475,7 @@ PAGE = """<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
 <main class="wrap"><section class="app-card">
 <img class="app-icon" src="{site}/assets/icon-512.png" alt="" width="112" height="112"><h1>{title}</h1>
 <p class="sub" id="who">{product}</p>
-<div id="busy"><div class="spinner"></div><p class="hint" id="msg">正在为这台设备签名，大约半分钟…</p></div>
+<div id="busy"><div class="spinner"></div><p class="hint" id="msg">正在为这台设备签名并上传安装包，大约两三分钟…</p></div>
 <div id="ok" hidden><a class="btn install-btn" href="itms-services://?action=download-manifest&amp;url={manifest}">安装{title}</a>
 <p class="hint">{hint}</p></div>
 <div id="err" class="notice" hidden><b>没装上</b><p id="errmsg"></p><a class="btn btn-line" href="{site}/ios/">回安装页重试</a></div>
@@ -496,7 +531,7 @@ class Handler(BaseHTTPRequestHandler):
                                                   "size": size, "date": date, "ready": bool(size)}),
                                  "application/json")
         if u.path == "/enroll.mobileconfig":
-            return self.send(200, mobileconfig(self.base()), "application/x-apple-aspen-config",
+            return self.send(200, sign_profile(mobileconfig(self.base())), "application/x-apple-aspen-config",
                              {"Content-Disposition": f'attachment; filename="{APP_SLUG}.mobileconfig"'})
         if u.path in ("/wait", "/status"):
             t = q.get("t", "")
