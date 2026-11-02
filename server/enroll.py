@@ -365,6 +365,8 @@ def worker():
             cert_rid = cert_rid or distribution_cert_id()
             failed = register_devices(pending)
             profile, udids = rebuild_profile(bundle_rid, cert_rid)
+            with open(os.path.join(DATA, "adhoc.mobileprovision"), "wb") as f:
+                f.write(profile)
             if not base or base.get("src") != src_stamp() or not os.path.isdir(base["app"]):
                 base = prepare_base()
                 base["src"] = src_stamp()
@@ -520,6 +522,13 @@ class Handler(BaseHTTPRequestHandler):
                 {"kind": "full-size-image", "url": f"{b}{SITE}/assets/icon-512.png"}],
                 "metadata": {"bundle-identifier": BUNDLE_ID, "bundle-version": version, "kind": "software",
                              "title": APP_TITLE}}]}), "application/xml")
+        if u.path == "/jump.mobileprovision":
+            # 试验：描述文件下载后再下载一个 .mobileprovision，Safari 会问要不要打开「设置」
+            path = os.path.join(DATA, "adhoc.mobileprovision")
+            if not os.path.exists(path):
+                return self.send(404, "")
+            with open(path, "rb") as f:
+                return self.send(200, f.read(), "application/octet-stream")
         if u.path == "/app.ipa":
             path = os.path.join(DATA, "app.ipa")
             if not os.path.exists(path):

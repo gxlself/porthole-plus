@@ -7,7 +7,7 @@
   var inApp = /MicroMessenger|QQ\/|Weibo|DingTalk|Lark|Feishu|AlipayClient/i.test(ua);
 
   function show(id) {
-    ['state-ok', 'state-inapp', 'state-desktop'].forEach(function (s) {
+    ['state-ok', 'state-inapp', 'state-desktop', 'state-guide'].forEach(function (s) {
       document.getElementById(s).hidden = s !== id;
     });
   }
@@ -25,6 +25,17 @@
   } else {
     show('state-ok');
   }
+
+  // 点了「开始安装」：描述文件开始下载后切到大字引导。
+  // ?jump=1 时再试一下下载 .mobileprovision，看 Safari 能不能直接把人带进「设置」（试验，默认关）。
+  var jump = /[?&]jump=1/.test(location.search);
+  document.getElementById('install').addEventListener('click', function () {
+    setTimeout(function () {
+      show('state-guide');
+      window.scrollTo(0, 0);
+      if (jump) setTimeout(function () { location.href = '/jump.mobileprovision'; }, 1500);
+    }, 600);
+  });
 
   document.getElementById('copy').addEventListener('click', function (e) {
     var url = location.href.split('#')[0];

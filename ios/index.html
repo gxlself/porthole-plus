@@ -32,6 +32,18 @@
       <a class="btn install-btn" id="install" href="/enroll.mobileconfig">开始安装</a>
       <p class="hint">第一次装要先让这台设备登记一下，全程自动，大约一分钟。</p>
     </div>
+    <div id="state-guide" class="state guide-now" hidden>
+      <b>描述文件已下载，去「设置」装上它</b>
+      <ol>
+        <li>弹窗里点<em>「允许」</em>，再点<em>「关闭」</em></li>
+        <li>回到桌面，打开<em>「设置」</em></li>
+        <li>点最上面的<em>「已下载描述文件」</em></li>
+        <li>点右上角<em>「安装」</em>，输入锁屏密码</li>
+      </ol>
+      <div class="settings-mock" aria-hidden="true"><span class="gear">⚙︎</span><span>设置</span><span class="row">已下载描述文件<i>›</i></span></div>
+      <p class="hint">装完会自动跳回 Safari，等半分钟就能点「安装」。没看到「已下载描述文件」就进「设置 › 通用 › VPN 与设备管理」。</p>
+      <a class="btn btn-line" id="again" href="/enroll.mobileconfig">没弹出来？再下载一次</a>
+    </div>
     <div id="state-inapp" class="state notice" hidden>
       <b>请用 Safari 打开这个页面</b>
       <p>微信、QQ 等 App 里的浏览器装不了。点右上角「···」，选「在 Safari 中打开」。</p>
