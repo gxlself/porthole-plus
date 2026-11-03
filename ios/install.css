@@ -48,3 +48,4 @@ body.install { background: linear-gradient(180deg, var(--night) 0, var(--night-2
 .settings-mock i { font-style: normal; color: var(--ink-2); }
 
 .alt-dl { margin: 16px 0 0; color: var(--ink-2); font-size: 14px; }
+.alt-btn { margin-top: 16px; }
