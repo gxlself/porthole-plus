@@ -9,7 +9,7 @@
 <link rel="icon" href="../assets/icon-64.png" type="image/png">
 <link rel="apple-touch-icon" href="../assets/icon-180.png">
 <link rel="stylesheet" href="../assets/site.css">
-<link rel="stylesheet" href="install.css">
+<link rel="stylesheet" href="install.css?v=2">
 </head>
 <body class="install">
 <header class="nav">
@@ -53,6 +53,11 @@
       <b>用 iPhone 相机扫一扫</b>
       <p>安装只能在 iPhone / iPad 上的 Safari 里完成。</p>
       <div class="qr" id="qr" aria-label="本页二维码"></div>
+      <p class="alt-dl">安卓手机？<a class="apk-link" href="https://github.com/gxlself/porthole-plus/releases/download/v0.1.0/PortholePlus.apk">下载安卓安装包</a></p>
+    </div>
+    <div id="state-android" class="state" hidden>
+      <a class="btn install-btn apk-link" href="https://github.com/gxlself/porthole-plus/releases/download/v0.1.0/PortholePlus.apk">下载安卓安装包</a>
+      <p class="hint">下载完点开 APK 安装。提示「未知来源」就按提示允许浏览器安装应用。微信里下载不了的话，点右上角「···」用浏览器打开。</p>
     </div>
   </section>
 
@@ -84,13 +89,13 @@
     <details><summary>装好描述文件后没有跳回来</summary><p>回到 Safari，重新打开这个页面再点一次「开始安装」，会直接进到安装那一步。</p></details>
     <details><summary>提示「无法安装」</summary><p>多半是签名还没生成完，等一分钟再点一次安装。还不行的话，重新走一遍「开始安装」。</p></details>
     <details><summary>新版本怎么更新？存档会丢吗？</summary><p>回到这个页面重新走一遍就行，会直接覆盖旧版，存档和设置都在。</p></details>
-    <details><summary>能一直用吗？</summary><p>内测签名有效期一年左右，到期前会发新版。安卓手机请回首页下载安装包。</p></details>
+    <details><summary>能一直用吗？</summary><p>内测签名有效期一年左右，到期前会发新版。安卓手机用手机浏览器打开这个页面，直接下载安装包。</p></details>
   </section>
 </main>
 
 <footer class="foot"><p><a href="../">返回舷窗Plus 首页</a></p></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
-<script src="install.js"></script>
+<script src="install.js?v=2"></script>
 </body>
 </html>

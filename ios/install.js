@@ -4,15 +4,21 @@
   var ua = navigator.userAgent;
   // iPadOS 13+ reports itself as a Mac; touch points tell them apart.
   var isIOS = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  var isAndroid = /Android/i.test(ua);
   var inApp = /MicroMessenger|QQ\/|Weibo|DingTalk|Lark|Feishu|AlipayClient/i.test(ua);
 
   function show(id) {
-    ['state-ok', 'state-inapp', 'state-desktop', 'state-guide'].forEach(function (s) {
+    ['state-ok', 'state-inapp', 'state-desktop', 'state-guide', 'state-android'].forEach(function (s) {
       document.getElementById(s).hidden = s !== id;
     });
   }
 
-  if (!isIOS) {
+  if (isAndroid) {
+    show('state-android');
+    document.querySelector('.sub').textContent = '安卓版';
+    document.querySelector('.facts').style.display = 'none';
+    document.querySelector('.guide').style.display = 'none';
+  } else if (!isIOS) {
     show('state-desktop');
     if (window.qrcode) {
       var qr = qrcode(0, 'M');

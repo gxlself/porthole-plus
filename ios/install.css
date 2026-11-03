@@ -46,3 +46,5 @@ body.install { background: linear-gradient(180deg, var(--night) 0, var(--night-2
 .settings-mock > span:nth-child(2) { font-weight: 800; font-size: 18px; }
 .settings-mock .row { grid-column: 1 / -1; display: flex; justify-content: space-between; padding: 12px 14px; border-radius: 12px; background: var(--card); font-weight: 700; box-shadow: 0 0 0 3px var(--sun); }
 .settings-mock i { font-style: normal; color: var(--ink-2); }
+
+.alt-dl { margin: 16px 0 0; color: var(--ink-2); font-size: 14px; }
