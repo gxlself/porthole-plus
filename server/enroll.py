@@ -478,7 +478,7 @@ PAGE = """<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
 <div id="busy"><div class="spinner"></div><p class="hint" id="msg">正在为这台设备签名并上传安装包，大约两三分钟…</p></div>
 <div id="ok" hidden><a class="btn install-btn" href="itms-services://?action=download-manifest&amp;url={manifest}">安装{title}</a>
 <p class="hint">{hint}</p></div>
-<div id="err" class="notice" hidden><b>没装上</b><p id="errmsg"></p><a class="btn btn-line" href="{site}/ios/">回安装页重试</a></div>
+<div id="err" class="notice" hidden><b>没装上</b><p id="errmsg"></p><a class="btn btn-line" href="{site}/ios/?direct=1">回安装页重试</a></div>
 </section></main>
 <style>.spinner{{width:44px;height:44px;margin:8px auto 4px;border-radius:50%;border:5px solid var(--line);border-top-color:var(--brand);animation:sp 1s linear infinite}}@keyframes sp{{to{{transform:rotate(1turn)}}}}</style>
 <script>

@@ -30,6 +30,9 @@
     show('state-inapp');
   } else {
     show('state-ok');
+    // iPhone 直接去 TestFlight；?direct=1 留在本页（TestFlight 用不了时走直接安装）
+    if (!/[?&]direct=1/.test(location.search)) { location.replace(document.getElementById('tf').href); return; }
+    document.getElementById('adhoc').open = true;
   }
 
   // 点了「开始安装」：描述文件开始下载后切到大字引导。

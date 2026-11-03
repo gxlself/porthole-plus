@@ -144,5 +144,14 @@
   <p>舷窗Plus · 内测版</p>
   <p class="credits">乘机时请遵守机组关于无线连接的要求。美术素材来自 Kenney、Quaternius、KayKit 等 CC0 资源包，感谢原作者。</p>
 </footer>
+<script id="tf-redirect">
+// iPhone / iPad 上「iPhone 安装」直接打开 TestFlight
+(function () {
+  var ua = navigator.userAgent;
+  if (!(/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1))) return;
+  if (/MicroMessenger|QQ\/|Weibo|DingTalk|Lark|Feishu|AlipayClient/i.test(ua)) return;
+  document.querySelectorAll('a[href="https://porthole.gxlself.com/ios/"]').forEach(function (a) { a.href = 'https://testflight.apple.com/join/cyyEwAxw'; });
+})();
+</script>
 </body>
 </html>
