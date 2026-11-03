@@ -49,3 +49,9 @@ body.install { background: linear-gradient(180deg, var(--night) 0, var(--night-2
 
 .alt-dl { margin: 16px 0 0; color: var(--ink-2); font-size: 14px; }
 .alt-btn { margin-top: 16px; }
+.facts { display: none; }
+.adhoc { margin-top: 18px; text-align: left; }
+.adhoc summary { cursor: pointer; color: var(--ink-2); font-size: 14px; text-align: center; }
+.adhoc .btn { margin-top: 12px; }
+.adhoc-steps { margin-top: 18px; }
+.adhoc-steps summary { cursor: pointer; font-weight: 600; }

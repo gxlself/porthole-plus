@@ -9,7 +9,7 @@
 <link rel="icon" href="../assets/icon-64.png" type="image/png">
 <link rel="apple-touch-icon" href="../assets/icon-180.png">
 <link rel="stylesheet" href="../assets/site.css">
-<link rel="stylesheet" href="install.css?v=5">
+<link rel="stylesheet" href="install.css?v=6">
 </head>
 <body class="install">
 <header class="nav">
@@ -29,9 +29,14 @@
     </dl>
 
     <div id="state-ok" class="state">
-      <a class="btn install-btn" id="install" href="/enroll.mobileconfig">开始安装</a>
-      <p class="hint">第一次装要先让这台设备登记一下，全程自动，大约一分钟。</p>
+      <a class="btn install-btn tf-link" id="tf" href="https://testflight.apple.com/join/cyyEwAxw">用 TestFlight 安装</a>
+      <p class="hint">TestFlight 是苹果官方的测试版商店。第一次用先在 App Store <a href="https://apps.apple.com/app/testflight/id899247664">装免费的 TestFlight</a>，再回来点上面的按钮。</p>
       <p class="alt-dl">安卓手机？<a class="apk-link" href="https://github.com/gxlself/porthole-plus/releases/latest/download/PortholePlus.apk">下载安卓安装包</a></p>
+      <details class="adhoc" id="adhoc">
+        <summary>TestFlight 打不开？换直接安装</summary>
+        <p class="hint">直接安装要先登记这台设备，装完还要打开一次「开发者模式」，步骤见下方「直接安装的步骤」。</p>
+        <a class="btn btn-line" id="install" href="/enroll.mobileconfig">直接安装</a>
+      </details>
     </div>
     <div id="state-guide" class="state guide-now" hidden>
       <b>描述文件已下载，去「设置」装上它</b>
@@ -63,10 +68,25 @@
   </section>
 
   <section class="guide">
-    <h2>第一次安装，跟着做就行</h2>
+    <h2>用 TestFlight 安装，三步</h2>
     <ol class="steps">
       <li>
-        <b>点「开始安装」，选「允许」</b>
+        <b>在 App Store 装「TestFlight」</b>
+        <span>苹果官方出的免费 App，<a href="https://apps.apple.com/app/testflight/id899247664">点这里去装</a>。已经装过就跳过。</span>
+      </li>
+      <li>
+        <b>回到这个页面，点「用 TestFlight 安装」</b>
+        <span>会打开 TestFlight，点「接受」再点「安装」。不用登记设备，不用开开发者模式。</span>
+      </li>
+      <li>
+        <b>第一次建房时点「允许」本地网络</b>
+        <span>不允许的话找不到身边的房间。</span>
+      </li>
+    </ol>
+    <details class="adhoc-steps"><summary>直接安装的步骤（备用）</summary>
+    <ol class="steps">
+      <li>
+        <b>点「直接安装」，选「允许」</b>
         <span>会下载一个「舷窗Plus 安装登记」描述文件。它只读这台设备的编号和机型，用来给你单独签一份安装包。</span>
       </li>
       <li>
@@ -81,27 +101,25 @@
         <b>提示「需要开发者模式」就打开它</b>
         <span>iOS 16 起内测版都要开一次：打开「设置 › 隐私与安全性」，拉到最下面点「开发者模式」打开，手机会重启；开机后在弹窗里点「打开」，输锁屏密码。不用电脑，不用 Xcode，开一次以后都不用再开。</span>
       </li>
-      <li>
-        <b>第一次建房时点「允许」本地网络</b>
-        <span>不允许的话找不到身边的房间。</span>
-      </li>
     </ol>
+    </details>
   </section>
 
   <section class="faq">
     <h2>常见问题</h2>
-    <details><summary>点了「开始安装」没反应</summary><p>要在 iPhone / iPad 自带的 Safari 里打开这个页面，微信、QQ 里的浏览器装不了。</p></details>
+    <details><summary>TestFlight 提示「此 Beta 版不接受任何新测试员」</summary><p>测试版正在等苹果审核，一般一天内通过，晚点再来点。急的话用上面的「直接安装」。</p></details>
+    <details><summary>点了安装没反应</summary><p>要在 iPhone / iPad 自带的 Safari 里打开这个页面，微信、QQ 里的浏览器装不了。</p></details>
     <details><summary>装好描述文件后没有跳回来</summary><p>回到 Safari，重新打开这个页面再点一次「开始安装」，会直接进到安装那一步。</p></details>
     <details><summary>提示「无法安装」</summary><p>多半是签名还没生成完，等一分钟再点一次安装。还不行的话，重新走一遍「开始安装」。</p></details>
-    <details><summary>新版本怎么更新？存档会丢吗？</summary><p>回到这个页面重新走一遍就行，会直接覆盖旧版，存档和设置都在。</p></details>
+    <details><summary>新版本怎么更新？存档会丢吗？</summary><p>用 TestFlight 装的会在 TestFlight 里收到更新提醒，点「更新」就行。直接安装的，回到这个页面重新点「直接安装」，会覆盖旧版，存档和设置都在。</p></details>
     <details><summary>打开提示「需要开发者模式」</summary><p>「设置 › 隐私与安全性」最下面有「开发者模式」，打开后手机重启，开机弹窗里点「打开」并输入锁屏密码。找不到这个开关的话，先把 App 装上、点一次图标，开关就会出现。</p></details>
-    <details><summary>能一直用吗？</summary><p>内测签名有效期一年左右，到期前会发新版。安卓手机用手机浏览器打开这个页面，直接下载安装包。</p></details>
+    <details><summary>能一直用吗？</summary><p>TestFlight 版每版能用 90 天，到期前会发新版；直接安装的签名一年左右。安卓手机用手机浏览器打开这个页面，直接下载安装包。</p></details>
   </section>
 </main>
 
 <footer class="foot"><p><a href="../">返回舷窗Plus 首页</a></p></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
-<script src="install.js?v=5"></script>
+<script src="install.js?v=6"></script>
 </body>
 </html>
