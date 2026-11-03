@@ -28,7 +28,7 @@ step4 = re.search(r'\s*<li>\s*<b>第一次建房时.*?</li>', s, re.S).group(0)
 s = s.replace(step4, ("\n      <li>\n        <b>" + cfg["step4"][0] + "</b>\n        <span>" + cfg["step4"][1] + "</span>\n      </li>") if cfg.get("step4") else "")
 s = s.replace("直接下载安装包。", "直接下载安装包。" + cfg.get("faq_extra", ""))
 s = s.replace('<footer class="foot"><p><a href="../">返回舷窗Plus 首页</a></p></footer>', f'<footer class="foot"><p><a href="{home}">{cfg["home_label"]}</a></p></footer>')
-s = s.replace("https://github.com/gxlself/porthole-plus/releases/download/v0.1.0/PortholePlus.apk", cfg["apk"])
+s = s.replace("https://github.com/gxlself/porthole-plus/releases/latest/download/PortholePlus.apk", cfg["apk"])
 s = s.replace("舷窗Plus", t).replace("../assets/", "/assets/")
 assert "舷窗Plus" not in s and "porthole-plus/releases" not in s and 'href="../' not in s, "还有没替换掉的舷窗Plus 链接"
 open(os.path.join(out, "ios/index.html"), "w", encoding="utf-8").write(s)
