@@ -30,8 +30,10 @@
     show('state-inapp');
   } else {
     show('state-ok');
-    // iPhone 直接去 TestFlight；?direct=1 留在本页（TestFlight 用不了时走直接安装）
-    if (!/[?&]direct=1/.test(location.search)) { location.replace(document.getElementById('tf').href); return; }
+    // TestFlight 测试版过审后（#tf data-ready="1"）iPhone 直接去 TestFlight；?direct=1 留在本页走直接安装
+    var tf = document.getElementById('tf');
+    if (tf.getAttribute('data-ready') === '1' && !/[?&]direct=1/.test(location.search)) { location.replace(tf.href); return; }
+    if (tf.getAttribute('data-ready') !== '1') document.getElementById('tf-wait').hidden = false;
     document.getElementById('adhoc').open = true;
   }
 

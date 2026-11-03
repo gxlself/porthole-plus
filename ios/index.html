@@ -9,7 +9,7 @@
 <link rel="icon" href="../assets/icon-64.png" type="image/png">
 <link rel="apple-touch-icon" href="../assets/icon-180.png">
 <link rel="stylesheet" href="../assets/site.css">
-<link rel="stylesheet" href="install.css?v=7">
+<link rel="stylesheet" href="install.css?v=8">
 </head>
 <body class="install">
 <header class="nav">
@@ -29,7 +29,8 @@
     </dl>
 
     <div id="state-ok" class="state">
-      <a class="btn install-btn tf-link" id="tf" href="https://testflight.apple.com/join/cyyEwAxw">用 TestFlight 安装</a>
+      <p class="hint" id="tf-wait" hidden>TestFlight 测试版还在等苹果审核（一般一两天），这之前先用下面的「直接安装」。</p>
+      <a class="btn install-btn tf-link" id="tf" data-ready="0" href="https://testflight.apple.com/join/cyyEwAxw">用 TestFlight 安装</a>
       <p class="hint">TestFlight 是苹果官方的测试版商店。第一次用先在 App Store <a href="https://apps.apple.com/app/testflight/id899247664">装免费的 TestFlight</a>，再回来点上面的按钮。</p>
       <p class="alt-dl">安卓手机？<a class="apk-link" href="https://github.com/gxlself/porthole-plus/releases/latest/download/PortholePlus.apk">下载安卓安装包</a></p>
       <details class="adhoc" id="adhoc">
@@ -120,6 +121,6 @@
 <footer class="foot"><p><a href="../">返回舷窗Plus 首页</a></p></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
-<script src="install.js?v=7"></script>
+<script src="install.js?v=8"></script>
 </body>
 </html>

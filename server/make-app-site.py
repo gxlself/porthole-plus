@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """用舷窗Plus 的 iPhone 安装页生成另一个 App 的安装站点。
 用法：make-app-site.py <输出目录> <icon-1024.png> <配置.json>
-配置：title brand home home_label apk（安卓安装包地址） testflight（TestFlight 公开链接） step4（可空） faq_extra（可空）
+配置：title brand home home_label apk（安卓安装包地址） testflight（TestFlight 公开链接） testflight_ready（测试版过审后设 true，iPhone 才直接跳 TestFlight） step4（可空） faq_extra（可空）
 """
 import json, os, re, shutil, subprocess, sys
 
@@ -30,6 +30,7 @@ s = s.replace("直接下载安装包。", "直接下载安装包。" + cfg.get("
 s = s.replace('<footer class="foot"><p><a href="../">返回舷窗Plus 首页</a></p></footer>', f'<footer class="foot"><p><a href="{home}">{cfg["home_label"]}</a></p></footer>')
 s = s.replace("https://github.com/gxlself/porthole-plus/releases/latest/download/PortholePlus.apk", cfg["apk"])
 s = s.replace("https://testflight.apple.com/join/cyyEwAxw", cfg["testflight"])
+s = s.replace('data-ready="0"', 'data-ready="%s"' % ("1" if cfg.get("testflight_ready") else "0"))
 s = s.replace("舷窗Plus", t).replace("../assets/", "/assets/")
 assert "舷窗Plus" not in s and "porthole-plus/releases" not in s and "cyyEwAxw" not in s and 'href="../' not in s, "还有没替换掉的舷窗Plus 链接"
 open(os.path.join(out, "ios/index.html"), "w", encoding="utf-8").write(s)

@@ -145,8 +145,10 @@
   <p class="credits">乘机时请遵守机组关于无线连接的要求。美术素材来自 Kenney、Quaternius、KayKit 等 CC0 资源包，感谢原作者。</p>
 </footer>
 <script id="tf-redirect">
-// iPhone / iPad 上「iPhone 安装」直接打开 TestFlight
+// iPhone / iPad 上「iPhone 安装」直接打开 TestFlight（测试版过审后把 TF_READY 改成 true）
 (function () {
+  var TF_READY = false;
+  if (!TF_READY) return;
   var ua = navigator.userAgent;
   if (!(/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1))) return;
   if (/MicroMessenger|QQ\/|Weibo|DingTalk|Lark|Feishu|AlipayClient/i.test(ua)) return;
